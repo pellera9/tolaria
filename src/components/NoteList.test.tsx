@@ -21,6 +21,7 @@ const mockEntries: VaultEntry[] = [
     modifiedAt: 1700000000,
     createdAt: null,
     fileSize: 1024,
+    snippet: 'Build a personal knowledge management app.',
   },
   {
     path: '/Users/luca/Laputa/note/facebook-ads-strategy.md',
@@ -36,6 +37,7 @@ const mockEntries: VaultEntry[] = [
     modifiedAt: 1700000000,
     createdAt: null,
     fileSize: 847,
+    snippet: 'Lookalike audiences convert 3x better.',
   },
   {
     path: '/Users/luca/Laputa/person/matteo-cellini.md',
@@ -51,6 +53,7 @@ const mockEntries: VaultEntry[] = [
     modifiedAt: 1700000000,
     createdAt: null,
     fileSize: 320,
+    snippet: 'Sponsorship manager.',
   },
   {
     path: '/Users/luca/Laputa/event/2026-02-14-kickoff.md',
@@ -66,6 +69,7 @@ const mockEntries: VaultEntry[] = [
     modifiedAt: 1700000000,
     createdAt: null,
     fileSize: 512,
+    snippet: 'Project kickoff meeting notes.',
   },
   {
     path: '/Users/luca/Laputa/topic/software-development.md',
@@ -81,6 +85,7 @@ const mockEntries: VaultEntry[] = [
     modifiedAt: 1700000000,
     createdAt: null,
     fileSize: 256,
+    snippet: 'Frontend, backend, and systems programming.',
   },
 ]
 

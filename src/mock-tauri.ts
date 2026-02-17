@@ -409,6 +409,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000,
     createdAt: null,
     fileSize: 2048,
+    snippet: 'This paragraph has bold text, italic text, bold italic, strikethrough, and inline code. Here\'s a regular link and a wiki-link to Matteo Cellini.',
   },
   {
     path: '/Users/luca/Laputa/responsibility/grow-newsletter.md',
@@ -424,6 +425,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 3600,
     createdAt: null,
     fileSize: 1024,
+    snippet: 'Build a sustainable audience through high-quality weekly essays on engineering leadership, AI, and personal systems.',
   },
   {
     path: '/Users/luca/Laputa/responsibility/manage-sponsorships.md',
@@ -439,6 +441,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 7200,
     createdAt: null,
     fileSize: 890,
+    snippet: 'Revenue stream from newsletter sponsorships. Matteo Cellini handles day-to-day operations.',
   },
   {
     path: '/Users/luca/Laputa/procedure/write-weekly-essays.md',
@@ -454,6 +457,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 86400,
     createdAt: null,
     fileSize: 512,
+    snippet: 'Monday: Pick topic, outline Tuesday: First draft Wednesday: Edit and polish Thursday: Schedule for Tuesday send',
   },
   {
     path: '/Users/luca/Laputa/procedure/run-sponsorships.md',
@@ -469,6 +473,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 86400 * 2,
     createdAt: null,
     fileSize: 640,
+    snippet: 'Review pipeline in CRM Follow up with pending proposals Schedule confirmed sponsors Send performance reports to completed sponsors',
   },
   {
     path: '/Users/luca/Laputa/experiment/stock-screener.md',
@@ -484,6 +489,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 86400,
     createdAt: null,
     fileSize: 3200,
+    snippet: 'Stocks that wick below the 200-day EMA and close above it show a statistically significant bounce in the following 5-10 days.',
   },
   {
     path: '/Users/luca/Laputa/note/facebook-ads-strategy.md',
@@ -499,6 +505,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 3600 * 5,
     createdAt: null,
     fileSize: 847,
+    snippet: 'Lookalike audiences from newsletter subscribers convert 3x better than interest-based targeting Video ads outperform static images by 40% on engagement',
   },
   {
     path: '/Users/luca/Laputa/note/budget-allocation.md',
@@ -514,6 +521,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 86400,
     createdAt: null,
     fileSize: 560,
+    snippet: 'Under budget on ads due to improved targeting efficiency Consider reallocating savings to content production',
   },
   {
     path: '/Users/luca/Laputa/person/matteo-cellini.md',
@@ -529,6 +537,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 86400 * 7,
     createdAt: null,
     fileSize: 320,
+    snippet: 'Sponsorship manager — handles all sponsor relationships, proposals, and reporting.',
   },
   {
     path: '/Users/luca/Laputa/event/2026-02-14-laputa-app-kickoff.md',
@@ -544,6 +553,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 3600 * 2,
     createdAt: null,
     fileSize: 1200,
+    snippet: 'Agreed on four-panel layout inspired by Bear Notes CodeMirror 6 for the editor — live preview is critical MVP by end of Q1.',
   },
   {
     path: '/Users/luca/Laputa/topic/software-development.md',
@@ -559,6 +569,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 86400 * 30,
     createdAt: null,
     fileSize: 256,
+    snippet: 'A broad topic covering everything from frontend to systems programming.',
   },
   {
     path: '/Users/luca/Laputa/topic/trading.md',
@@ -574,6 +585,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     modifiedAt: Date.now() / 1000 - 86400 * 14,
     createdAt: null,
     fileSize: 180,
+    snippet: 'Technical analysis (EMA, RSI, volume patterns) Algorithmic screening and alerts Risk management and position sizing',
   },
 ]
 

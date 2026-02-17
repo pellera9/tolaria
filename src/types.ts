@@ -12,6 +12,7 @@ export interface VaultEntry {
   modifiedAt: number | null
   createdAt: number | null
   fileSize: number
+  snippet: string
 }
 
 export interface GitCommit {
