@@ -116,7 +116,6 @@ function DynamicRelationshipsPanel({ frontmatter, entries, onNavigate }: { front
 
   return (
     <div>
-      <h4 className="font-mono-overline mb-2 text-muted-foreground">Relationships</h4>
       {relationshipEntries.length === 0 ? (
         <p className="m-0 text-[13px] text-muted-foreground">No relationships</p>
       ) : (
@@ -236,7 +235,6 @@ function EmptyInspector() {
         <p className="m-0 text-[13px] text-muted-foreground">No note selected</p>
       </div>
       <div>
-        <h4 className="font-mono-overline mb-2 text-muted-foreground">Relationships</h4>
         <p className="m-0 text-[13px] text-muted-foreground">No relationships</p>
       </div>
       <div>
