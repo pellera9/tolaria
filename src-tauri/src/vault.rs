@@ -705,13 +705,17 @@ This is a project note.
         let entry = parse_md_file(&dir.path().join("laputa.md")).unwrap();
         assert_eq!(entry.title, "Laputa Project");
         assert_eq!(entry.is_a, Some("Project".to_string()));
+        assert_eq!(entry.filename, "laputa.md");
+
+        // List fields
         assert_eq!(entry.aliases, vec!["Laputa", "Castle in the Sky"]);
         assert_eq!(entry.belongs_to, vec!["Studio Ghibli"]);
         assert_eq!(entry.related_to, vec!["Miyazaki"]);
+
+        // Scalar fields
         assert_eq!(entry.status, Some("Active".to_string()));
         assert_eq!(entry.owner, Some("Luca".to_string()));
         assert_eq!(entry.cadence, Some("Weekly".to_string()));
-        assert_eq!(entry.filename, "laputa.md");
     }
 
     #[test]
@@ -722,10 +726,12 @@ This is a project note.
 
         let entry = parse_md_file(&dir.path().join("empty-fm.md")).unwrap();
         assert_eq!(entry.title, "Just a Title");
-        // is_a is inferred from parent folder name (temp dir), so just check it's not from frontmatter
+
+        // All list/optional fields should be empty/None
         assert!(entry.aliases.is_empty());
         assert!(entry.belongs_to.is_empty());
         assert!(entry.related_to.is_empty());
+
         assert_eq!(entry.status, None);
     }
 
@@ -995,22 +1001,23 @@ Status: Active
 
         let entry = parse_md_file(&dir.path().join("big-project.md")).unwrap();
 
-        // All wikilink fields should appear in relationships
-        assert_eq!(entry.relationships.get("Has").unwrap().len(), 2);
-        assert_eq!(entry.relationships.get("Topics").unwrap().len(), 2);
-        assert_eq!(entry.relationships.get("Events").unwrap().len(), 1);
-        assert_eq!(entry.relationships.get("Notes").unwrap().len(), 3);
-        assert_eq!(
-            entry.relationships.get("Owner").unwrap(),
-            &vec!["[[person/alice]]".to_string()]
-        );
-        assert_eq!(entry.relationships.get("Related to").unwrap().len(), 1);
-        assert_eq!(entry.relationships.get("Belongs to").unwrap().len(), 1);
+        let rels = &entry.relationships;
 
-        // Status is in SKIP_KEYS, should NOT be in relationships
-        assert!(entry.relationships.get("Status").is_none());
-        // Is A is in SKIP_KEYS, should NOT be in relationships
-        assert!(entry.relationships.get("Is A").is_none());
+        // Custom wikilink fields
+        assert_eq!(rels.get("Has").unwrap().len(), 2);
+        assert_eq!(rels.get("Topics").unwrap().len(), 2);
+        assert_eq!(rels.get("Events").unwrap().len(), 1);
+
+        assert_eq!(rels.get("Notes").unwrap().len(), 3);
+        assert_eq!(rels.get("Owner").unwrap(), &vec!["[[person/alice]]".to_string()]);
+
+        // Built-in fields still appear as relationships when they contain wikilinks
+        assert_eq!(rels.get("Related to").unwrap().len(), 1);
+        assert_eq!(rels.get("Belongs to").unwrap().len(), 1);
+
+        // SKIP_KEYS should NOT appear in relationships
+        assert!(rels.get("Status").is_none());
+        assert!(rels.get("Is A").is_none());
     }
 
     #[test]
@@ -1067,19 +1074,19 @@ Real Relation: "[[note/important]]"
 
         let entry = parse_md_file(&dir.path().join("skip-keys.md")).unwrap();
 
-        // All SKIP_KEYS should be excluded from relationships
-        assert!(entry.relationships.get("Is A").is_none());
-        assert!(entry.relationships.get("Aliases").is_none());
-        assert!(entry.relationships.get("Status").is_none());
-        assert!(entry.relationships.get("Cadence").is_none());
-        assert!(entry.relationships.get("Created at").is_none());
-        assert!(entry.relationships.get("Created time").is_none());
+        let rels = &entry.relationships;
+
+        // All SKIP_KEYS should be excluded
+        assert!(rels.get("Is A").is_none());
+        assert!(rels.get("Aliases").is_none());
+        assert!(rels.get("Status").is_none());
+
+        assert!(rels.get("Cadence").is_none());
+        assert!(rels.get("Created at").is_none());
+        assert!(rels.get("Created time").is_none());
 
         // Non-skip key with wikilink should still be included
-        assert_eq!(
-            entry.relationships.get("Real Relation").unwrap(),
-            &vec!["[[note/important]]".to_string()]
-        );
+        assert_eq!(rels.get("Real Relation").unwrap(), &vec!["[[note/important]]".to_string()]);
         // Only 1 relationship total
         assert_eq!(entry.relationships.len(), 1);
     }
@@ -1352,6 +1359,8 @@ References:
     fn test_contains_wikilink_false() {
         assert!(!contains_wikilink("no links here"));
         assert!(!contains_wikilink("[single bracket]"));
+
+        // Partial wikilink markers don't count
         assert!(!contains_wikilink("only [[ opening"));
         assert!(!contains_wikilink("only ]] closing"));
     }
