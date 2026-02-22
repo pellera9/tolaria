@@ -14,6 +14,7 @@ import { useAppKeyboard } from './hooks/useAppKeyboard'
 import { useEntryActions } from './hooks/useEntryActions'
 import { isTauri } from './mock-tauri'
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation'
+import { useUpdater } from './hooks/useUpdater'
 import type { SidebarSelection, GitCommit } from './types'
 import './App.css'
 
@@ -105,6 +106,8 @@ function App() {
     activeTabPathRef: notes.activeTabPathRef,
     handleCloseTabRef: notes.handleCloseTabRef,
   })
+
+  useUpdater()
 
   useKeyboardNavigation({
     tabs: notes.tabs,

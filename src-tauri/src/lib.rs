@@ -85,6 +85,12 @@ pub fn run() {
                 )?;
             }
 
+            #[cfg(desktop)]
+            {
+                app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+                app.handle().plugin(tauri_plugin_process::init())?;
+            }
+
             // Purge trashed files older than 30 days on startup
             let vault_path = dirs::home_dir()
                 .map(|h| h.join("Laputa"))
