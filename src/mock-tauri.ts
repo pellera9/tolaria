@@ -1700,7 +1700,8 @@ index abc1234..${shortHash} 100644
 }
 
 let mockHasChanges = true
-const mockSavedPaths = new Set<string>()
+/** Tracks paths saved since the last mock commit — used by get_modified_files */
+const mockSavedSinceCommit = new Set<string>()
 
 let mockSettings: Settings = {
   anthropic_key: null,
@@ -1721,18 +1722,23 @@ const mockHandlers: Record<string, (args: any) => any> = {
   get_file_history: (args: { path: string }) => mockFileHistory(args.path),
   get_modified_files: () => {
     const base = mockHasChanges ? mockModifiedFiles() : []
-    const basePaths = new Set(base.map((f) => f.path))
-    const extra: ModifiedFile[] = [...mockSavedPaths]
-      .filter((p) => !basePaths.has(p))
-      .map((p) => ({ path: p, relativePath: p.split('/').slice(-2).join('/'), status: 'modified' as const }))
+    const basePaths = new Set(base.map(f => f.path))
+    const extra: ModifiedFile[] = [...mockSavedSinceCommit]
+      .filter(p => !basePaths.has(p))
+      .map(p => ({
+        path: p,
+        relativePath: p.replace(/^.*?\/Laputa\//, ''),
+        status: 'modified' as const,
+      }))
     return [...base, ...extra]
   },
   get_file_diff: (args: { path: string }) => mockFileDiff(args.path),
   get_file_diff_at_commit: (args: { path: string; commitHash: string }) => mockFileDiffAtCommit(args.path, args.commitHash),
   git_commit: (args: { message: string }) => {
+    const count = (mockHasChanges ? mockModifiedFiles().length : 0) + mockSavedSinceCommit.size
     mockHasChanges = false
-    mockSavedPaths.clear()
-    return `[main abc1234] ${args.message}\n 3 files changed`
+    mockSavedSinceCommit.clear()
+    return `[main abc1234] ${args.message}\n ${count} files changed`
   },
   git_push: () => {
     return 'Everything up-to-date'
@@ -1756,7 +1762,7 @@ const mockHandlers: Record<string, (args: any) => any> = {
   },
   save_note_content: (args: { path: string; content: string }) => {
     MOCK_CONTENT[args.path] = args.content
-    mockSavedPaths.add(args.path)
+    mockSavedSinceCommit.add(args.path)
     if (typeof window !== 'undefined') {
       window.__mockContent = MOCK_CONTENT
     }

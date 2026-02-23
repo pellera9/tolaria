@@ -14,6 +14,7 @@ import { useVaultLoader } from './hooks/useVaultLoader'
 import { useSettings } from './hooks/useSettings'
 import { useNoteActions, generateUntitledName } from './hooks/useNoteActions'
 import { useEditorSave } from './hooks/useEditorSave'
+import { useCommitFlow } from './hooks/useCommitFlow'
 import { useAppKeyboard } from './hooks/useAppKeyboard'
 import { useViewMode } from './hooks/useViewMode'
 import { useEntryActions } from './hooks/useEntryActions'
@@ -67,7 +68,6 @@ function App() {
   const [gitHistory, setGitHistory] = useState<GitCommit[]>([])
   const [showCreateTypeDialog, setShowCreateTypeDialog] = useState(false)
   const [showQuickOpen, setShowQuickOpen] = useState(false)
-  const [showCommitDialog, setShowCommitDialog] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [vaultPath, setVaultPath] = useState(DEFAULT_VAULTS[0].path)
   const [showAIChat, setShowAIChat] = useState(false)
@@ -87,11 +87,18 @@ function App() {
 
   const notes = useNoteActions({ addEntry: vault.addEntry, updateContent: vault.updateContent, entries: vault.entries, setToastMessage, updateEntry: vault.updateEntry })
 
-  const { handleSave, handleContentChange, savePendingForPath } = useEditorSave({
+  const { handleSave, handleContentChange, savePendingForPath, savePending } = useEditorSave({
     updateVaultContent: vault.updateContent,
     setTabs: notes.setTabs,
     setToastMessage,
     onAfterSave: vault.loadModifiedFiles,
+  })
+
+  const commitFlow = useCommitFlow({
+    savePending,
+    loadModifiedFiles: vault.loadModifiedFiles,
+    commitAndPush: vault.commitAndPush,
+    setToastMessage,
   })
 
   const entryActions = useEntryActions({
@@ -210,18 +217,6 @@ function App() {
     onSelectNote: notes.handleSelectNote,
   })
 
-  const handleCommitPush = useCallback(async (message: string) => {
-    setShowCommitDialog(false)
-    try {
-      const result = await vault.commitAndPush(message)
-      setToastMessage(result)
-      vault.loadModifiedFiles()
-    } catch (err) {
-      console.error('Commit failed:', err)
-      setToastMessage(`Commit failed: ${err}`)
-    }
-  }, [vault])
-
   const activeTab = notes.tabs.find((t) => t.entry.path === notes.activeTabPath) ?? null
 
   return (
@@ -229,7 +224,7 @@ function App() {
       <UpdateBanner status={updateStatus} actions={updateActions} />
       <div className="app">
         <div className="app__sidebar" style={{ width: layout.sidebarWidth }}>
-          <Sidebar entries={vault.entries} selection={selection} onSelect={setSelection} onSelectNote={notes.handleSelectNote} onCreateType={handleCreateNoteImmediate} onCreateNewType={openCreateTypeDialog} onCustomizeType={entryActions.handleCustomizeType} onReorderSections={entryActions.handleReorderSections} modifiedCount={vault.modifiedFiles.length} onCommitPush={() => setShowCommitDialog(true)} />
+          <Sidebar entries={vault.entries} selection={selection} onSelect={setSelection} onSelectNote={notes.handleSelectNote} onCreateType={handleCreateNoteImmediate} onCreateNewType={openCreateTypeDialog} onCustomizeType={entryActions.handleCustomizeType} onReorderSections={entryActions.handleReorderSections} modifiedCount={vault.modifiedFiles.length} onCommitPush={commitFlow.openCommitDialog} />
         </div>
         <ResizeHandle onResize={layout.handleSidebarResize} />
         <div className="app__note-list" style={{ width: layout.noteListWidth }}>
@@ -276,7 +271,7 @@ function App() {
       <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
       <QuickOpenPalette open={showQuickOpen} entries={vault.entries} onSelect={notes.handleSelectNote} onClose={() => setShowQuickOpen(false)} />
       <CreateTypeDialog open={showCreateTypeDialog} onClose={() => setShowCreateTypeDialog(false)} onCreate={handleCreateType} />
-      <CommitDialog open={showCommitDialog} modifiedCount={vault.modifiedFiles.length} onCommit={handleCommitPush} onClose={() => setShowCommitDialog(false)} />
+      <CommitDialog open={commitFlow.showCommitDialog} modifiedCount={vault.modifiedFiles.length} onCommit={commitFlow.handleCommitPush} onClose={commitFlow.closeCommitDialog} />
       <SettingsPanel open={showSettings} settings={settings} onSave={saveSettings} onClose={() => setShowSettings(false)} />
       <GitHubVaultModal
         open={showGitHubVault}

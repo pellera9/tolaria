@@ -155,4 +155,66 @@ describe('useEditorSave', () => {
     // The ref should hold the latest value — verified via save
     // (We'll check via the next handleSave call)
   })
+
+  it('savePending flushes pending content to disk silently', async () => {
+    const { result } = renderSaveHook()
+
+    // No pending content — should be a no-op
+    await act(async () => {
+      await result.current.savePending()
+    })
+    expect(mockInvokeFn).not.toHaveBeenCalled()
+
+    // Buffer content
+    act(() => {
+      result.current.handleContentChange('/test/note.md', 'pending content')
+    })
+
+    // savePending should save without toasting
+    await act(async () => {
+      await result.current.savePending()
+    })
+    expect(mockInvokeFn).toHaveBeenCalledWith('save_note_content', {
+      path: '/test/note.md',
+      content: 'pending content',
+    })
+    expect(setToastMessage).not.toHaveBeenCalled()
+
+    // After savePending, pending is cleared
+    await act(async () => {
+      await result.current.savePending()
+    })
+    // No additional save call
+    expect(mockInvokeFn).toHaveBeenCalledTimes(1)
+  })
+
+  it('onAfterSave: called after handleSave but NOT after savePending', async () => {
+    const onAfterSave = vi.fn()
+    const { result } = renderHook(() =>
+      useEditorSave({ updateVaultContent, setTabs, setToastMessage, onAfterSave })
+    )
+
+    // savePending does not trigger onAfterSave (callers manage their own refresh)
+    act(() => { result.current.handleContentChange('/test/note.md', 'v1') })
+    await act(async () => { await result.current.savePending() })
+    expect(onAfterSave).not.toHaveBeenCalled()
+
+    // handleSave DOES trigger onAfterSave
+    act(() => { result.current.handleContentChange('/test/note.md', 'v2') })
+    await act(async () => { await result.current.handleSave() })
+    expect(onAfterSave).toHaveBeenCalledTimes(1)
+  })
+
+  it('onAfterSave is NOT called when there is nothing to save', async () => {
+    const onAfterSave = vi.fn()
+    const { result } = renderHook(() =>
+      useEditorSave({ updateVaultContent, setTabs, setToastMessage, onAfterSave })
+    )
+
+    await act(async () => {
+      await result.current.handleSave()
+    })
+
+    expect(onAfterSave).not.toHaveBeenCalled()
+  })
 })

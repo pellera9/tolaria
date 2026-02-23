@@ -31,23 +31,28 @@ export function useEditorSave({ updateVaultContent, setTabs, setToastMessage, on
 
   const { saveNote } = useSaveNote(updateTabAndContent)
 
+  /** Persist pending content matching an optional path filter; returns true if saved */
+  const flushPending = useCallback(async (pathFilter?: string): Promise<boolean> => {
+    const pending = pendingContentRef.current
+    if (!pending) return false
+    if (pathFilter && pending.path !== pathFilter) return false
+    await saveNote(pending.path, pending.content)
+    pendingContentRef.current = null
+    return true
+  }, [saveNote])
+
   /** Called by Cmd+S — persists the current editor content to disk */
   const handleSave = useCallback(async () => {
-    const pending = pendingContentRef.current
-    if (!pending) {
-      setToastMessage('Nothing to save')
-      return
-    }
     try {
-      await saveNote(pending.path, pending.content)
-      pendingContentRef.current = null
+      const saved = await flushPending()
+      if (!saved) { setToastMessage('Nothing to save'); return }
       setToastMessage('Saved')
       onAfterSave?.()
     } catch (err) {
       console.error('Save failed:', err)
       setToastMessage(`Save failed: ${err}`)
     }
-  }, [saveNote, setToastMessage, onAfterSave])
+  }, [flushPending, setToastMessage, onAfterSave])
 
   /** Called by Editor onChange — buffers the latest content without saving */
   const handleContentChange = useCallback((path: string, content: string) => {
@@ -55,13 +60,14 @@ export function useEditorSave({ updateVaultContent, setTabs, setToastMessage, on
   }, [])
 
   /** Save pending content for a specific path (used before rename) */
-  const savePendingForPath = useCallback(async (path: string): Promise<void> => {
-    const pending = pendingContentRef.current
-    if (pending && pending.path === path) {
-      await saveNote(pending.path, pending.content)
-      pendingContentRef.current = null
-    }
-  }, [saveNote])
+  const savePendingForPath = useCallback(
+    (path: string): Promise<boolean> => flushPending(path),
+    [flushPending],
+  )
 
-  return { handleSave, handleContentChange, savePendingForPath }
+  /** Flush any pending content to disk silently (used before git commit).
+   * Does NOT call onAfterSave — callers manage their own refresh. */
+  const savePending = useCallback((): Promise<boolean> => flushPending(), [flushPending])
+
+  return { handleSave, handleContentChange, savePendingForPath, savePending }
 }

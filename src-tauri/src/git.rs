@@ -277,7 +277,14 @@ pub fn git_commit(vault_path: &str, message: &str) -> Result<String, String> {
 
     if !commit.status.success() {
         let stderr = String::from_utf8_lossy(&commit.stderr);
-        return Err(format!("git commit failed: {}", stderr));
+        let stdout = String::from_utf8_lossy(&commit.stdout);
+        // git writes "nothing to commit" to stdout, not stderr
+        let detail = if stderr.trim().is_empty() {
+            stdout
+        } else {
+            stderr
+        };
+        return Err(format!("git commit failed: {}", detail.trim()));
     }
 
     Ok(String::from_utf8_lossy(&commit.stdout).to_string())
@@ -542,5 +549,61 @@ mod tests {
             .unwrap();
         let log_str = String::from_utf8_lossy(&log.stdout);
         assert!(log_str.contains("Test commit"));
+    }
+
+    #[test]
+    fn test_commit_flow_modified_files_then_commit_clears() {
+        let dir = setup_git_repo();
+        let vault = dir.path();
+        let vp = vault.to_str().unwrap();
+
+        // Create and commit initial file
+        fs::write(vault.join("flow.md"), "# Original\n").unwrap();
+        git_commit(vp, "initial").unwrap();
+
+        // Modify the file on disk
+        fs::write(vault.join("flow.md"), "# Modified\n").unwrap();
+
+        // get_modified_files should detect the change
+        let modified = get_modified_files(vp).unwrap();
+        assert!(
+            modified.iter().any(|f| f.relative_path == "flow.md"),
+            "Modified file should be detected after write"
+        );
+
+        // Commit the change
+        let result = git_commit(vp, "update flow").unwrap();
+        assert!(
+            result.contains("1 file changed") || result.contains("flow.md"),
+            "Commit output should reference the changed file: {}",
+            result
+        );
+
+        // After commit, get_modified_files should return empty
+        let after = get_modified_files(vp).unwrap();
+        assert!(
+            after.is_empty(),
+            "No modified files should remain after commit, found: {:?}",
+            after
+        );
+    }
+
+    #[test]
+    fn test_commit_nothing_to_commit_returns_error() {
+        let dir = setup_git_repo();
+        let vault = dir.path();
+        let vp = vault.to_str().unwrap();
+
+        // Create and commit, so working tree is clean
+        fs::write(vault.join("clean.md"), "# Clean\n").unwrap();
+        git_commit(vp, "initial").unwrap();
+
+        // Committing again with no changes should fail
+        let result = git_commit(vp, "nothing here");
+        assert!(result.is_err(), "Commit should fail when nothing to commit");
+        assert!(
+            result.unwrap_err().contains("nothing to commit"),
+            "Error should mention 'nothing to commit'"
+        );
     }
 }
