@@ -128,7 +128,12 @@ fn is_list_continuation(line: &str) -> bool {
 /// Split content into frontmatter body and the rest after the closing `---`.
 /// Returns `(fm_content, rest)` where `fm_content` is between the opening and closing `---`.
 fn split_frontmatter(content: &str) -> Result<(&str, &str), String> {
-    let fm_end = content[4..]
+    let after_open = &content[4..];
+    // Handle empty frontmatter: closing --- immediately after opening ---\n
+    if let Some(stripped) = after_open.strip_prefix("---") {
+        return Ok(("", stripped));
+    }
+    let fm_end = after_open
         .find("\n---")
         .map(|i| i + 4)
         .ok_or_else(|| "Malformed frontmatter: no closing ---".to_string())?;
@@ -638,5 +643,74 @@ mod tests {
     #[test]
     fn test_format_yaml_key_with_period() {
         assert_eq!(format_yaml_key("key.name"), "\"key.name\"");
+    }
+
+    // --- split_frontmatter / empty frontmatter edge cases ---
+
+    #[test]
+    fn test_split_frontmatter_empty_block() {
+        // ---\n---\n  (no fields between opening and closing ---)
+        let result = split_frontmatter("---\n---\n");
+        assert!(
+            result.is_ok(),
+            "split_frontmatter should handle empty frontmatter block"
+        );
+        let (fm, rest) = result.unwrap();
+        assert_eq!(fm, "");
+        assert_eq!(rest, "\n");
+    }
+
+    #[test]
+    fn test_split_frontmatter_empty_block_no_trailing_newline() {
+        // ---\n---  (no trailing newline)
+        let result = split_frontmatter("---\n---");
+        assert!(
+            result.is_ok(),
+            "split_frontmatter should handle empty frontmatter without trailing newline"
+        );
+    }
+
+    #[test]
+    fn test_split_frontmatter_empty_block_with_body() {
+        // ---\n---\n\n# Title\n
+        let result = split_frontmatter("---\n---\n\n# Title\n");
+        assert!(
+            result.is_ok(),
+            "split_frontmatter should handle empty frontmatter with body"
+        );
+        let (fm, rest) = result.unwrap();
+        assert_eq!(fm, "");
+        assert!(rest.contains("# Title"));
+    }
+
+    #[test]
+    fn test_update_frontmatter_empty_block() {
+        let content = "---\n---\n\n# Test\n";
+        let result = update_frontmatter_content(
+            content,
+            "title",
+            Some(FrontmatterValue::String("New Title".to_string())),
+        );
+        assert!(
+            result.is_ok(),
+            "update_frontmatter_content should handle empty frontmatter block"
+        );
+        let updated = result.unwrap();
+        assert!(updated.contains("title: New Title"));
+    }
+
+    #[test]
+    fn test_update_frontmatter_no_body_after_closing() {
+        // Frontmatter with title, no body after closing ---
+        let content = "---\ntitle: Old\n---\n";
+        let result = update_frontmatter_content(
+            content,
+            "title",
+            Some(FrontmatterValue::String("New".to_string())),
+        );
+        assert!(result.is_ok());
+        let updated = result.unwrap();
+        assert!(updated.contains("title: New"));
+        assert!(!updated.contains("title: Old"));
     }
 }

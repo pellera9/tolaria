@@ -402,4 +402,73 @@ mod tests {
         assert!(content.contains("title: New Name"));
         assert!(content.contains("# New Name"));
     }
+
+    // --- Regression: rename empty / minimal notes (nota vuota) ---
+
+    /// Helper: create a note, rename it, assert the rename succeeded and old file is gone.
+    /// Returns the content of the renamed file for further assertions.
+    fn rename_test_note(filename: &str, content: &str, new_title: &str) -> String {
+        let dir = TempDir::new().unwrap();
+        let vault = dir.path();
+        create_test_file(vault, filename, content);
+
+        let old_path = vault.join(filename);
+        let result = rename_note(
+            vault.to_str().unwrap(),
+            old_path.to_str().unwrap(),
+            new_title,
+        )
+        .expect("rename_note should succeed");
+
+        let expected_slug = title_to_slug(new_title);
+        assert!(
+            result.new_path.ends_with(&format!("{}.md", expected_slug)),
+            "new path should end with slug: {}",
+            expected_slug
+        );
+        assert!(!old_path.exists(), "old file should be removed");
+        assert!(
+            Path::new(&result.new_path).exists(),
+            "new file should exist"
+        );
+
+        fs::read_to_string(&result.new_path).unwrap()
+    }
+
+    #[test]
+    fn test_rename_note_empty_file() {
+        rename_test_note("note/empty.md", "", "Renamed Empty");
+    }
+
+    #[test]
+    fn test_rename_note_empty_frontmatter_no_body() {
+        rename_test_note("note/empty-fm.md", "---\n---\n", "Renamed Note");
+    }
+
+    #[test]
+    fn test_rename_note_frontmatter_title_no_body() {
+        let content = rename_test_note(
+            "note/titled.md",
+            "---\ntitle: Old Title\ntype: Note\n---\n",
+            "New Title",
+        );
+        assert!(content.contains("title: New Title"));
+    }
+
+    #[test]
+    fn test_rename_note_h1_only_no_body() {
+        let content = rename_test_note("note/heading-only.md", "# Old Heading\n", "New Heading");
+        assert!(content.contains("# New Heading"));
+    }
+
+    #[test]
+    fn test_rename_note_frontmatter_and_h1_no_body() {
+        let content = rename_test_note(
+            "note/full-empty.md",
+            "---\ntitle: My Note\ntype: Note\nstatus: Active\n---\n\n# My Note\n\n",
+            "Renamed Note",
+        );
+        assert!(content.contains("title: Renamed Note"));
+        assert!(content.contains("# Renamed Note"));
+    }
 }
